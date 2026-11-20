@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Celeste’s Piano Practice</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#fdf1e7;--card:#fffdfa;--ink:#3a2c48;--soft:#85707a;--line:#3a2c48;--sec:#ff8f3f;--sec-t:#fff;--thr:#2a9d8f;--thr-t:#fff;--ok:#1f9d55;--no:#d64545;--chip:#f5dfcc;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#16163a;--card:#23235a;--ink:#f1f1ff;--soft:#a9a8d6;--line:#f1f1ff;--chip:#33337a;--sec:#ff9f57;--thr:#3cc0b0;--ok:#4cc77f}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:'Fredoka','Trebuchet MS',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+main{max-width:520px;margin:0 auto;padding:14px 16px 28px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+h1{font-size:20px;margin:0;font-weight:600;display:flex;align-items:center;gap:8px}.logo{width:32px;height:32px;flex:none}
+.score{display:flex;gap:6px;font-size:15px}
+.chip{background:var(--chip);border-radius:999px;padding:4px 11px;font-weight:500;white-space:nowrap}
+.steps{display:flex;gap:8px;margin-bottom:10px}
+.steps span{flex:1;text-align:center;padding:6px;border-radius:14px;background:var(--chip);color:var(--soft);font-weight:500;font-size:15px}
+.steps span.on{background:var(--ink);color:var(--bg)}
+.card{position:relative;margin-top:18px;background:var(--card);border-radius:28px;padding:14px 10px 10px;box-shadow:0 6px 0 var(--chip)}.card::before,.card::after{content:"";position:absolute;top:-13px;border-left:15px solid transparent;border-right:15px solid transparent;border-bottom:24px solid var(--card)}.card::before{left:28px;transform:rotate(-14deg)}.card::after{right:28px;transform:rotate(14deg)}
+.card.ok{box-shadow:0 6px 0 var(--ok)}.card.no{box-shadow:0 6px 0 var(--no)}
+svg{width:100%;height:auto;display:block;max-height:42vh}
+.q{text-align:center;font-size:22px;font-weight:500;margin:14px 0 10px}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{font:inherit;border:0;border-radius:22px;cursor:pointer;color:inherit}
+.ans{font-size:30px;font-weight:600;padding:22px 8px;min-height:84px}
+.ans small{display:block;font-size:14px;font-weight:400;opacity:.9}
+#bSec{background:var(--sec);color:var(--sec-t)}#bThr{background:var(--thr);color:var(--thr-t)}
+.ans:active{transform:scale(.97)}
+.msg{text-align:center;font-size:18px;margin:14px 4px 10px;line-height:1.4}
+.msg b{font-size:22px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.sm{background:var(--chip);padding:10px 18px;font-size:16px;font-weight:500}
+.big{background:var(--ink);color:var(--bg);padding:14px 32px;font-size:20px;font-weight:600}
+.hear{text-align:center;font-size:20px;margin:6px 0;min-height:30px;color:var(--soft)}
+.hear b{color:var(--ink);font-size:26px}
+.tip{font-size:15px;text-align:center;color:var(--soft);margin-top:12px;line-height:1.4}
+.tip b{color:var(--ink)}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1><svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 14 L7 3 L14 8 Q16 7.6 18 8 L25 3 L27 14 Q29 18 26 23 Q22 29 16 29 Q10 29 6 23 Q3 18 5 14Z" fill="var(--sec)"/><circle cx="12" cy="17" r="1.6" fill="var(--ink)"/><circle cx="20" cy="17" r="1.6" fill="var(--ink)"/><path d="M15 20.3h2l-1 1.3z" fill="var(--ink)"/><path d="M16 21.6q-1.5 2-3 1M16 21.6q1.5 2 3 1" stroke="var(--ink)" fill="none" stroke-width="1" stroke-linecap="round"/></svg>Celeste’s Piano Practice</h1>
+<div class="score"><span class="chip" id="sc">⭐ 0 / 0</span><span class="chip" id="pl">🐾 0</span></div>
+</header>
+<div class="steps"><span id="s1" class="on">1 · Name it</span><span id="s2">2 · Play it</span></div>
+<div class="card" id="card">
+<svg id="staff" viewBox="0 0 320 190" role="img" aria-label="Two notes on a music staff"></svg>
+</div>
+
+<section id="pick">
+<div class="q">Is it a 2nd or a 3rd?</div>
+<div class="btns">
+<button class="ans" id="bSec" data-a="2">2nd<small>neighbors</small></button>
+<button class="ans" id="bThr" data-a="3">3rd<small>skip one</small></button>
+</div>
+<div class="row"><button class="sm" id="hint">💡 Hint</button></div>
+<div class="tip" id="tip" hidden>
+<b>2nd:</b> one note on a line, the other in a space next to it.<br>
+<b>3rd:</b> both on lines, or both in spaces.
+</div>
+</section>
+
+<section id="fb" hidden>
+<div class="msg" id="fbMsg" aria-live="polite"></div>
+<div class="row"><button class="big" id="goPlay">Now play it 🎹</button></div>
+</section>
+
+<section id="play" hidden>
+<div class="msg" id="pIntro" style="margin-bottom:0"></div>
+<div class="msg" id="pMsg" aria-live="polite"></div>
+<div class="hear" id="heard"></div>
+<div class="row">
+<button class="big" id="mic" hidden>🎤 Try the microphone again</button>
+</div>
+<div class="row">
+<button class="sm" id="hearIt">🔊 Hear it</button>
+<button class="sm" id="skip">Skip</button>
+</div>
+</section>
+
+<section id="done" hidden>
+<div class="msg" id="dMsg" aria-live="polite"></div>
+<div class="row"><button class="big" id="next">Next card</button></div>
+</section>
+</main>
+<script>
+(function(){
+var NAMES=['E','F','G','A','B','C','D','E','F','G'];
+var SEMI=[0,1,3,5,7,8,10,12,13,15];
+var SEMI_B=[0,2,4,5,7,9,10,12,14,16],NAMES_B=['G','A','B','C','D','E','F','G','A','B'];
+var PC=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+var BASE=130,GAP=10,NS='http://www.w3.org/2000/svg';
+var $=function(i){return document.getElementById(i)};
+var svg=$('staff'),card=$('card');
+var cur=null,ac=null,stream=null,an=null,buf=null,timer=null,listening=false,mutedUntil=0;
+var idRight=0,idTotal=0,played=0,idx=0,state=['todo','todo'],lastM=-1,cnt=0,done1=false;
+
+function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e}
+function y(s){return BASE-s*GAP}
+function midi(s){return cur.clef==='B'?43+SEMI_B[s]:64+SEMI[s]}
+function nm(s){return (cur.clef==='B'?NAMES_B:NAMES)[s]}
+
+function bassClef(){
+ el('circle',{cx:22,cy:y(6),r:6,fill:'var(--line)'});
+ el('path',{d:'M22 70 C38 68 42 84 34 96 C28 106 20 114 12 120',fill:'none',stroke:'var(--line)','stroke-width':5,'stroke-linecap':'round'});
+ el('circle',{cx:52,cy:y(7),r:3.2,fill:'var(--line)'});el('circle',{cx:52,cy:y(5),r:3.2,fill:'var(--line)'});
+}
+function draw(){
+ while(svg.firstChild)svg.removeChild(svg.firstChild);
+ for(var i=0;i<5;i++)el('line',{x1:10,x2:310,y1:y(i*2),y2:y(i*2),stroke:'var(--line)','stroke-width':1.6});
+ el('line',{x1:10,x2:10,y1:y(8),y2:y(0),stroke:'var(--line)','stroke-width':2});
+ if(cur.clef==='B')bassClef();else el('text',{x:22,y:152,'font-size':112,fill:'var(--line)','font-family':"'Noto Music','Apple Symbols','Segoe UI Symbol',serif"}).textContent='\uD834\uDD1E';
+ [cur.a,cur.b].forEach(function(s,i){
+  var x=i?240:150,st=state[i],col=st==='done'?'var(--ok)':st==='active'?'var(--sec)':'var(--line)';
+  if(st==='active')el('circle',{cx:x,cy:y(s),r:24,fill:'none',stroke:'var(--sec)','stroke-width':3,'stroke-dasharray':'5 5'});
+  el('ellipse',{cx:x,cy:y(s),rx:13,ry:9.5,fill:col,transform:'rotate(-20 '+x+' '+y(s)+')'});
+  var up=s<4;
+  el('line',{x1:up?x+12:x-12,x2:up?x+12:x-12,y1:y(s)+(up?-2:2),y2:y(s)+(up?-38:38),stroke:col,'stroke-width':2.4});
+ });
+}
+
+function show(p){
+ ['pick','fb','play','done'].forEach(function(k){$(k).hidden=k!==p});
+ $('s1').className=p==='pick'||p==='fb'?'on':'';
+ $('s2').className=p==='play'||p==='done'?'on':'';
+}
+
+function newCard(){
+ var d=Math.random()<.5?1:2,s=Math.floor(Math.random()*10),dir=Math.random()<.5?1:-1,t=s+d*dir;
+ if(t<0||t>9){dir=-dir;t=s+d*dir}
+ if(t<0||t>9)return newCard();
+ cur={a:s,b:t,ans:d===1?2:3,clef:Math.random()<.5?'T':'B'};
+ state=['todo','todo'];card.className='card';
+ stopLoop();show('pick');draw();
+}
+
+function why(){
+ if(cur.ans===2)return 'Neighbors! One note is on a line and the other is in a space.';
+ return 'Skip one! Both notes are '+(cur.a%2===0?'on lines':'in spaces')+'.';
+}
+
+function answer(g){
+ idTotal++;var ok=g===cur.ans;if(ok)idRight++;
+ card.className='card '+(ok?'ok':'no');
+ $('fbMsg').innerHTML=(ok?'<b>😺 Purr-fect! </b>':'<b>Not quite — </b>')+'it’s a '+cur.ans+(cur.ans===2?'nd':'rd')+'.<br>'+why();
+ $('sc').textContent='⭐ '+idRight+' / '+idTotal;
+ if(ok){goPlay(true)}else{show('fb')}
+}
+
+/* ---------- sound out ---------- */
+function ctx(){ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.resume)ac.resume();return ac}
+function tone(f,t,len){
+ var o=ac.createOscillator(),g=ac.createGain();
+ o.type='triangle';o.frequency.value=f;
+ g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.35,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+len);
+ o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+len+.05);
+}
+function hearIt(){
+ try{ctx();var t=ac.currentTime+.05;
+ [cur.a,cur.b].forEach(function(s,i){tone(440*Math.pow(2,(midi(s)-69)/12),t+i*.7,1.1)});
+ mutedUntil=performance.now()+2300;cnt=0;lastM=-1;}catch(e){}
+}
+
+/* ---------- microphone ---------- */
+function detect(x,sr,fmin,fmax){
+ var N=x.length,i,rms=0;
+ for(i=0;i<N;i++)rms+=x[i]*x[i];
+ rms=Math.sqrt(rms/N);if(rms<0.012)return -1;
+ var lo=Math.floor(sr/fmax),hi=Math.ceil(sr/fmin),W=2048,r=[],best=0,l;
+ for(l=lo;l<=hi;l++){
+  var c=0,e1=0,e2=0;
+  for(i=0;i<W;i++){var a=x[i],b=x[i+l];c+=a*b;e1+=a*a;e2+=b*b}
+  r[l]=c/(Math.sqrt(e1*e2)+1e-9);if(r[l]>best)best=r[l];
+ }
+ if(best<0.8)return -1;
+ for(l=lo+1;l<hi;l++){
+  if(r[l]>=best*0.93&&r[l]>=r[l-1]&&r[l]>=r[l+1]){
+   var d=(r[l-1]-r[l+1])/(2*(r[l-1]-2*r[l]+r[l+1])||1);
+   return sr/(l+d);
+  }
+ }
+ return -1;
+}
+
+function startMic(){
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+  $('pMsg').innerHTML='This browser can’t use the microphone here. Tap <b>Skip</b> to keep going.';return}
+ ctx();
+ navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(s){
+  stream=s;var src=ac.createMediaStreamSource(s);
+  an=ac.createAnalyser();an.fftSize=4096;buf=new Float32Array(an.fftSize);src.connect(an);
+  beginListen();
+ }).catch(function(err){
+  $('pMsg').innerHTML='I need the microphone to hear you. Allow it for this page, or open the page in its own browser tab. You can also tap <b>Skip</b>.<br><small>('+(err&&err.name?err.name:'error')+')</small>';$('mic').hidden=false;
+ });
+}
+
+function target(){return midi(idx===0?cur.a:cur.b)}
+function prompt(){
+ var n=idx===0?'first':'second';
+ $('pMsg').innerHTML='<b>Play the '+n+' note</b><br>Find '+nm(idx===0?cur.a:cur.b)+' on the piano.';
+}
+function beginListen(){
+ listening=true;$('mic').hidden=true;
+ idx=0;state=['active','todo'];cnt=0;lastM=-1;prompt();draw();
+ stopLoop();timer=setInterval(tick,60);
+}
+function stopLoop(){if(timer){clearInterval(timer);timer=null}}
+
+function tick(){
+ if(!listening||!an||performance.now()<mutedUntil){return}
+ an.getFloatTimeDomainData(buf);
+ var f=cur.clef==='B'?detect(buf,ac.sampleRate,80,400):detect(buf,ac.sampleRate,250,1000);
+ if(f<0){cnt=0;lastM=-1;$('heard').innerHTML='';return}
+ var m=Math.round(69+12*Math.log(f/440)/Math.LN2);
+ $('heard').innerHTML='I hear: <b>'+PC[((m%12)+12)%12]+'</b>';
+ if(m===lastM)cnt++;else{lastM=m;cnt=1}
+ if(cnt<3)return;
+ var t=target();
+ if(m===t){
+  state[idx]='done';idx++;cnt=0;lastM=-1;
+  if(idx>1){finish();return}
+  state[1]='active';prompt();draw();
+ }else if(((m-t)%12+12)%12===0){
+  $('pMsg').innerHTML='<b>Right note name!</b><br>Look for the one '+(m>t?'lower':'higher')+' on the piano.';
+ }else if(cnt===3){
+  $('pMsg').innerHTML='<b>Try again</b><br>Find '+nm(idx===0?cur.a:cur.b)+' — the glowing note.';
+ }
+}
+
+function finish(){
+ listening=false;stopLoop();played++;$('pl').textContent='🐾 '+played;
+ draw();$('heard').innerHTML='';
+ $('dMsg').innerHTML='<b>😸 You played it! Purr-fect!</b><br>'+nm(cur.a)+' to '+nm(cur.b)+' is a '+cur.ans+(cur.ans===2?'nd':'rd')+'.';
+ show('done');
+}
+
+function goPlay(ok){
+ show('play');idx=0;state=['active','todo'];draw();$('heard').innerHTML='';$('pIntro').innerHTML=ok===true?'<b>😺 Purr-fect!</b> It’s a '+cur.ans+(cur.ans===2?'nd':'rd')+'.':'';
+ if(stream&&an){$('mic').hidden=true;beginListen()}
+ else{listening=false;prompt();startMic()}
+}
+
+document.querySelectorAll('.ans').forEach(function(b){b.addEventListener('click',function(){answer(+b.dataset.a)})});
+$('goPlay').addEventListener('click',goPlay);
+$('mic').addEventListener('click',function(){$('mic').hidden=true;startMic()});
+$('hearIt').addEventListener('click',hearIt);
+$('skip').addEventListener('click',function(){listening=false;stopLoop();newCard()});
+$('next').addEventListener('click',newCard);
+$('hint').addEventListener('click',function(){var t=$('tip');t.hidden=!t.hidden});
+newCard();
+})();
+</script>
+</body>
+</html>

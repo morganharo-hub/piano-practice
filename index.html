@@ -108,15 +108,21 @@ function midi(s){return cur.clef==='B'?43+SEMI_B[s]:64+SEMI[s]}
 function nm(s){return (cur.clef==='B'?NAMES_B:NAMES)[s]}
 
 function bassClef(){
- el('circle',{cx:22,cy:y(6),r:6,fill:'var(--line)'});
- el('path',{d:'M22 70 C38 68 42 84 34 96 C28 106 20 114 12 120',fill:'none',stroke:'var(--line)','stroke-width':5,'stroke-linecap':'round'});
- el('circle',{cx:52,cy:y(7),r:3.2,fill:'var(--line)'});el('circle',{cx:52,cy:y(5),r:3.2,fill:'var(--line)'});
+ el('path',{d:'M20 64 C26 49 53 47 58 68 C62 88 40 111 12 126 C37 105 50 85 47 70 C44 59 31 58 26 70 Z',fill:'var(--line)',stroke:'var(--line)','stroke-width':.6,'stroke-linejoin':'round'});
+ el('circle',{cx:22,cy:y(6),r:6.5,fill:'var(--line)'});
+ el('circle',{cx:66,cy:y(7),r:3.4,fill:'var(--line)'});el('circle',{cx:66,cy:y(5),r:3.4,fill:'var(--line)'});
+}
+function trebleClef(){
+ var a={fill:'none',stroke:'var(--line)','stroke-width':3.4,'stroke-linecap':'round','stroke-linejoin':'round'};
+ a.d='M37 31 L37 128 C37 143 25 149 24 141';el('path',a);
+ a.d='M37 104 C44 95 55 103 54 115 C53 129 29 133 23 118 C18 105 25 90 40 80 C55 69 56 46 46 34 C42 29 37 33 37 44';el('path',a);
+ el('circle',{cx:24,cy:141,r:3.7,fill:'var(--line)'});
 }
 function draw(){
  while(svg.firstChild)svg.removeChild(svg.firstChild);
  for(var i=0;i<5;i++)el('line',{x1:10,x2:310,y1:y(i*2),y2:y(i*2),stroke:'var(--line)','stroke-width':1.6});
  el('line',{x1:10,x2:10,y1:y(8),y2:y(0),stroke:'var(--line)','stroke-width':2});
- if(cur.clef==='B')bassClef();else el('text',{x:22,y:152,'font-size':112,fill:'var(--line)','font-family':"'Noto Music','Apple Symbols','Segoe UI Symbol',serif"}).textContent='\uD834\uDD1E';
+ if(cur.clef==='B')bassClef();else trebleClef();
  [cur.a,cur.b].forEach(function(s,i){
   var x=i?240:150,st=state[i],col=st==='done'?'var(--ok)':st==='active'?'var(--sec)':'var(--line)';
   if(st==='active')el('circle',{cx:x,cy:y(s),r:24,fill:'none',stroke:'var(--sec)','stroke-width':3,'stroke-dasharray':'5 5'});

@@ -87,7 +87,7 @@ button{font:inherit;border:0;border-radius:22px;cursor:pointer;color:inherit}
 
 <section id="done" hidden>
 <div class="msg" id="dMsg" aria-live="polite"></div>
-<div class="row"><button class="big" id="next">Next card</button></div>
+<div class="row"><button class="big" id="next" hidden>Next card</button></div>
 </section>
 </main>
 <script>
@@ -99,7 +99,7 @@ var PC=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 var BASE=130,GAP=10,NS='http://www.w3.org/2000/svg';
 var $=function(i){return document.getElementById(i)};
 var svg=$('staff'),card=$('card');
-var cur=null,ac=null,stream=null,an=null,buf=null,timer=null,listening=false,mutedUntil=0;
+var nextT=null,failT=null,hist=[],lvl=0,cur=null,ac=null,stream=null,an=null,buf=null,timer=null,listening=false,mutedUntil=0;
 var idRight=0,idTotal=0,played=0,idx=0,state=['todo','todo'],lastM=-1,cnt=0,done1=false;
 
 function el(n,a){var e=document.createElementNS(NS,n);for(var k in a)e.setAttribute(k,a[k]);svg.appendChild(e);return e}
@@ -138,7 +138,7 @@ function newCard(){
  if(t<0||t>9)return newCard();
  cur={a:s,b:t,ans:d===1?2:3,clef:Math.random()<.5?'T':'B'};
  state=['todo','todo'];card.className='card';
- stopLoop();show('pick');draw();
+ clearTimeout(nextT);clearTimeout(failT);stopLoop();show('pick');draw();
 }
 
 function why(){
@@ -165,21 +165,21 @@ function tone(f,t,len){
 function hearIt(){
  try{ctx();var t=ac.currentTime+.05;
  [cur.a,cur.b].forEach(function(s,i){tone(440*Math.pow(2,(midi(s)-69)/12),t+i*.7,1.1)});
- mutedUntil=performance.now()+2300;cnt=0;lastM=-1;}catch(e){}
+ mutedUntil=performance.now()+2300;cnt=0;lastM=-1;hist=[];}catch(e){}
 }
 
 /* ---------- microphone ---------- */
 function detect(x,sr,fmin,fmax){
  var N=x.length,i,rms=0;
  for(i=0;i<N;i++)rms+=x[i]*x[i];
- rms=Math.sqrt(rms/N);if(rms<0.012)return -1;
- var lo=Math.floor(sr/fmax),hi=Math.ceil(sr/fmin),W=2048,r=[],best=0,l;
+ rms=Math.sqrt(rms/N);lvl=rms;if(rms<0.006)return -1;
+ var lo=Math.floor(sr/fmax),hi=Math.ceil(sr/fmin),W=2048,o=N-W-hi-2,r=[],best=0,l;
  for(l=lo;l<=hi;l++){
   var c=0,e1=0,e2=0;
-  for(i=0;i<W;i++){var a=x[i],b=x[i+l];c+=a*b;e1+=a*a;e2+=b*b}
+  for(i=0;i<W;i++){var a=x[o+i],b=x[o+i+l];c+=a*b;e1+=a*a;e2+=b*b}
   r[l]=c/(Math.sqrt(e1*e2)+1e-9);if(r[l]>best)best=r[l];
  }
- if(best<0.8)return -1;
+ if(best<0.65)return -1;
  for(l=lo+1;l<hi;l++){
   if(r[l]>=best*0.93&&r[l]>=r[l-1]&&r[l]>=r[l+1]){
    var d=(r[l-1]-r[l+1])/(2*(r[l-1]-2*r[l]+r[l+1])||1);
@@ -193,9 +193,9 @@ function startMic(){
  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
   $('pMsg').innerHTML='This browser can’t use the microphone here. Tap <b>Skip</b> to keep going.';return}
  ctx();
- navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).then(function(s){
+ navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}}).catch(function(e){if(e&&(e.name==='NotAllowedError'||e.name==='SecurityError'))throw e;return navigator.mediaDevices.getUserMedia({audio:true})}).then(function(s){
   stream=s;var src=ac.createMediaStreamSource(s);
-  an=ac.createAnalyser();an.fftSize=4096;buf=new Float32Array(an.fftSize);src.connect(an);
+  an=ac.createAnalyser();an.fftSize=4096;buf=new Float32Array(an.fftSize);src.connect(an);var z=ac.createGain();z.gain.value=0;an.connect(z);z.connect(ac.destination);if(ac.resume)ac.resume();
   beginListen();
  }).catch(function(err){
   $('pMsg').innerHTML='I need the microphone to hear you. Allow it for this page, or open the page in its own browser tab. You can also tap <b>Skip</b>.<br><small>('+(err&&err.name?err.name:'error')+')</small>';$('mic').hidden=false;
@@ -205,41 +205,41 @@ function startMic(){
 function target(){return midi(idx===0?cur.a:cur.b)}
 function prompt(){
  var n=idx===0?'first':'second';
- $('pMsg').innerHTML='<b>Play the '+n+' note</b><br>Find '+nm(idx===0?cur.a:cur.b)+' on the piano.';
+ $('pMsg').innerHTML='<b>Play the '+n+' note</b><br>Read the glowing note, then find it on the piano.';
 }
 function beginListen(){
  listening=true;$('mic').hidden=true;
- idx=0;state=['active','todo'];cnt=0;lastM=-1;prompt();draw();
+ idx=0;state=['active','todo'];cnt=0;lastM=-1;hist=[];prompt();draw();clearTimeout(failT);failT=setTimeout(function(){if(listening)finish(false)},25000);
  stopLoop();timer=setInterval(tick,60);
 }
 function stopLoop(){if(timer){clearInterval(timer);timer=null}}
 
 function tick(){
  if(!listening||!an||performance.now()<mutedUntil){return}
- an.getFloatTimeDomainData(buf);
+ if(an.getFloatTimeDomainData)an.getFloatTimeDomainData(buf);else{var u=new Uint8Array(buf.length);an.getByteTimeDomainData(u);for(var k=0;k<u.length;k++)buf[k]=(u[k]-128)/128}
  var f=cur.clef==='B'?detect(buf,ac.sampleRate,80,400):detect(buf,ac.sampleRate,250,1000);
- if(f<0){cnt=0;lastM=-1;$('heard').innerHTML='';return}
+ if(f<0){cnt=0;lastM=-1;hist.push(-1);if(hist.length>8)hist.shift();$('heard').innerHTML='Listening… '+'▮'.repeat(Math.min(10,Math.round(lvl*100)))+(ac.state!=='running'?' (tap the screen)':'');return}
  var m=Math.round(69+12*Math.log(f/440)/Math.LN2);
  $('heard').innerHTML='I hear: <b>'+PC[((m%12)+12)%12]+'</b>';
- if(m===lastM)cnt++;else{lastM=m;cnt=1}
- if(cnt<3)return;
- var t=target();
- if(m===t){
-  state[idx]='done';idx++;cnt=0;lastM=-1;
-  if(idx>1){finish();return}
+ lastM=m;hist.push(m);if(hist.length>8)hist.shift();
+ if(hist.length<3)return;
+ var t=target(),hits=0,voiced=0,pcs=[0,0,0,0,0,0,0,0,0,0,0,0],pv=idx===1?midi(cur.a):null;hist.forEach(function(h){if(h>=0&&(pv===null||((h-pv)%12+12)%12!==0)){voiced++;pcs[h%12]++;if(((h-t)%12+12)%12===0)hits++}});var mx=Math.max.apply(null,pcs);
+ if(hits>=3){
+  state[idx]='done';idx++;cnt=0;lastM=-1;hist=[];
+  if(idx>1){finish(true);return}
   state[1]='active';prompt();draw();
- }else if(((m-t)%12+12)%12===0){
+ }else if(false){
   $('pMsg').innerHTML='<b>Right note name!</b><br>Look for the one '+(m>t?'lower':'higher')+' on the piano.';
- }else if(cnt===3){
-  $('pMsg').innerHTML='<b>Try again</b><br>Find '+nm(idx===0?cur.a:cur.b)+' — the glowing note.';
+ }else if(voiced>=6&&hits===0&&mx>=6){finish(false);return}else if(false){
+  $('pMsg').innerHTML='<b>Try again</b><br>Look at the glowing note again.';
  }
 }
 
-function finish(){
- listening=false;stopLoop();played++;$('pl').textContent='🐾 '+played;
+function finish(ok){
+ listening=false;stopLoop();clearTimeout(failT);if(ok){played++;$('pl').textContent='🐾 '+played}card.className='card '+(ok?'ok':'no');
  draw();$('heard').innerHTML='';
- $('dMsg').innerHTML='<b>😸 You played it! Purr-fect!</b><br>'+nm(cur.a)+' to '+nm(cur.b)+' is a '+cur.ans+(cur.ans===2?'nd':'rd')+'.';
- show('done');
+ $('dMsg').innerHTML=(ok?'<b>😸 You played it! Purr-fect!</b>':'<b>😿 Not quite!</b>')+'<br>'+nm(cur.a)+' to '+nm(cur.b)+' is a '+cur.ans+(cur.ans===2?'nd':'rd')+'.';
+ show('done');nextT=setTimeout(newCard,2000);
 }
 
 function goPlay(ok){
@@ -254,6 +254,7 @@ $('mic').addEventListener('click',function(){$('mic').hidden=true;startMic()});
 $('hearIt').addEventListener('click',hearIt);
 $('skip').addEventListener('click',function(){listening=false;stopLoop();newCard()});
 $('next').addEventListener('click',newCard);
+document.addEventListener('click',function(){if(ac&&ac.state!=='running'&&ac.resume)ac.resume()});
 $('hint').addEventListener('click',function(){var t=$('tip');t.hidden=!t.hidden});
 newCard();
 })();
